@@ -4,6 +4,7 @@ import pathlib
 
 
 def generates_praise():
+    """Считывает файл praise.txt с похвалами и берет оттуда случайную речь."""
     file_path = pathlib.Path.cwd().joinpath('praise.txt')
     with open(file_path, 'r') as file:
         praise = random.choice([line for line in file.readlines()])
@@ -42,7 +43,8 @@ def create_commendation(child_name, subject):
         child_data = Schoolkid.objects.get(full_name__contains=child_name)
         school_subject = Lesson.objects.filter(year_of_study=6, group_letter='А', subject__title=subject)
         lesson = random.choice(school_subject)
-        Commendation.objects.create(text=generates_praise(), created=lesson.date, schoolkid=child_data, subject=lesson.subject,
+        Commendation.objects.create(text=generates_praise(), created=lesson.date, schoolkid=child_data,
+                                    subject=lesson.subject,
                                     teacher=lesson.teacher)
     except Schoolkid.MultipleObjectsReturned:
         print('Уточните ФИО ученика')
