@@ -33,7 +33,7 @@
 
 - [Скачайте код](https://github.com/devmanorg/e-diary/tree/master)
 - [Скачайте БД и поместите файл в директорию проекта](https://dvmn.org/filer/canonical/1562234129/166/)
-- Скачайте данный репозиторий и поместите скрипт `scripts.py` в директорию проекта
+- Скачайте данный репозиторий и поместите скрипт `scripts.py` и файл `praise.txt` в директорию проекта
 - Установите зависимости командой `pip install -r requirements.txt`
 - Создайте БД командой `python3 manage.py migrate`
 - Запустите сервер командой `python3 manage.py runserver`
@@ -55,6 +55,18 @@
     python manage.py shell
     ```
 - Скопируйте код из `scripts.py` в shell
+
+- Функция `generates_praise` открывает файл `praise.txt` и выбирает в нем случайную похвалу:
+
+    ```python
+    def generates_praise():
+        """Считывает файл praise.txt с похвалами и берет оттуда случайную речь."""
+        file_path = pathlib.Path.cwd().joinpath('praise.txt')
+        with open(file_path, 'r') as file:
+            praise = random.choice([line for line in file.readlines()])
+        return praise
+    ```
+
 - Функция `fix_marks` отвечает отвечает за исправление всех плохих оценок ученика на 5. Чтобы ее запустить передайте функции в качестве аргумента ФИО ученика:
 
     ```python
