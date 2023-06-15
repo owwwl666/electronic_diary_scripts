@@ -59,63 +59,70 @@
 - Функция `generates_praise` открывает файл `praise.txt` и выбирает в нем случайную похвалу:
 
     ```python
-    def generates_praise():
+    def get_praise_from_file():
         """Считывает файл praise.txt с похвалами и берет оттуда случайную речь."""
         file_path = pathlib.Path.cwd().joinpath('praise.txt')
         with open(file_path, 'r') as file:
             praise = random.choice([line for line in file.readlines()])
         return praise
     ```
+    
+- Функция `get_schoolkid` возвращает данные учетной записи ученика, а в случае ошибки обрабтывает ее и сообщает пользователю о причине поломки кода:
+
+    ```python
+    def get_schoolkid(child_name):
+        """Возвращает данные об ученике
+
+        В случае ошибки обрабатывает исключение и возбуждает его в зависимости от проблемы.
+        """
+        try:
+            student_account = Schoolkid.objects.get(full_name__contains=child_name)
+        except Schoolkid.MultipleObjectsReturned:
+            raise Schoolkid.MultipleObjectsReturned('Уточните ФИО ученика')
+        except Schoolkid.DoesNotExist:
+            raise Schoolkid.DoesNotExist('Ученик не найден')
+        return student_account
+    ```
 
 - Функция `fix_marks` отвечает отвечает за исправление всех плохих оценок ученика на 5. Чтобы ее запустить передайте функции в качестве аргумента ФИО ученика:
 
     ```python
     def fix_marks(child_name):
-      """Исправляем оценки меньше тройки ученика на пятерки."""
-      try:
-          child_data = Schoolkid.objects.get(full_name__contains=child_name).full_name
-          child_marks = Mark.objects.filter(schoolkid__full_name=child_data, points__lte=3)
-          for child_mark in child_marks:
-              child_mark.points = '5'
-              child_mark.save()
-      except Schoolkid.MultipleObjectsReturned:
-          print('Уточните ФИО ученика')
-      except Schoolkid.DoesNotExist:
-          print('Ученик не найден')
+        """Исправляет оценки меньше тройки ученика на пятерки."""
+        child_data = get_schoolkid(child_name)
+        Mark.objects.filter(schoolkid__full_name=child_data.full_name, points__lte=3) \
+            .update(points=5)
     ```
     
 - Функция `remote_chastisements` удаляет все замечания в учетной записи ученика. Принимает в качестве аргумента ФИО ученика:
 
     ```python
     def remote_chastisements(child_name):
-      """Удаляем замечания с учетной записи ученика."""
-      try:
-          child_data = Schoolkid.objects.get(full_name__contains=child_name).full_name
-          chastisement_child = Chastisement.objects.filter(schoolkid__full_name__contains=child_data)
-          chastisement_child.delete()
-      except Schoolkid.MultipleObjectsReturned:
-          print('Уточните ФИО ученика')
-      except Schoolkid.DoesNotExist:
-          print('Ученик не найден')
+        """Удаляет замечания с учетной записи ученика."""
+        child_data = get_schoolkid(child_name)
+        child_chastisement = Chastisement.objects.filter(schoolkid__full_name=child_data.full_name)
+        child_chastisement.delete()
     ```
 
 - Функция `create_commendation` создает похвалу от учителя ученику за случайный урок по определенному предмету. Аргументы - ФИО ученика, 'Название' предмета:
 
      ```python
-    def create_commendation(child_name, subject):
-      """Создаем похвалительную речь для ученика на случайном уроке одного из предмета."""
-      try:
-          child_data = Schoolkid.objects.get(full_name__contains=child_name)
-          school_subject = Lesson.objects.filter(year_of_study=6, group_letter='А', subject__title=subject)
-          lesson = random.choice(school_subject)
-          Commendation.objects.create(text='Хвалю', created=lesson.date, schoolkid=child_data, subject=lesson.subject,
-                                      teacher=lesson.teacher)
-      except Schoolkid.MultipleObjectsReturned:
-          print('Уточните ФИО ученика')
-      except Schoolkid.DoesNotExist:
-          print('Ученик не найден')
-      except IndexError:
-          print('Неверное название предмета')
+   def create_commendation(child_name, subject):
+        """Создает похвалительную речь для ученика на случайном уроке одного из предмета."""
+        try:
+            child_data = get_schoolkid(child_name)
+            school_subject = Lesson.objects.filter(year_of_study=child_data.year_of_study,
+                                                   group_letter=child_data.group_letter,
+                                                   subject__title=subject)
+            lesson = random.choice(school_subject)
+        except IndexError:
+            raise IndexError('Неверное название предмета или отсутствие урока')
+        else:
+            Commendation.objects.create(text=get_praise_from_file(),
+                                        created=lesson.date,
+                                        schoolkid=get_schoolkid(child_name),
+                                        subject=lesson.subject,
+                                        teacher=lesson.teacher)
     ```
 
 ## Цели проекта
